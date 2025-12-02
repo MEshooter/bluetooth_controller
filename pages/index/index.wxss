@@ -1,0 +1,160 @@
+/* index.wxss */
+page {
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+  background-color: #f0f2f5;
+  position: relative;
+  /* 防止 iOS 橡皮筋效果 */
+  overscroll-behavior: none;
+}
+
+/* --- 1. 顶部状态栏 (极简模式) --- */
+.top-bar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 50rpx; /* 高度大幅减小 */
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 20rpx;
+  background: rgba(255, 255, 255, 0.95);
+  box-sizing: border-box;
+  z-index: 100;
+  border-bottom: 1rpx solid rgba(0,0,0,0.05);
+}
+
+.status-indicator { 
+  font-size: 20rpx; /* 字体缩小 */
+  font-weight: bold; 
+  flex-shrink: 0; 
+}
+
+.input-wrapper { 
+  display: flex; 
+  align-items: center; 
+}
+
+.cmd-input { 
+  border: 1rpx solid #ddd; 
+  background: #fff; 
+  width: 180rpx; /* 宽度减小 */
+  height: 36rpx; /* 高度减小 */
+  min-height: 36rpx;
+  border-radius: 18rpx; 
+  padding: 0 15rpx; 
+  font-size: 20rpx; /* 字体缩小 */
+  margin-right: 10rpx;
+}
+
+.send-btn { 
+  margin: 0 !important; 
+  font-size: 20rpx; 
+  height: 36rpx; 
+  line-height: 36rpx; 
+  padding: 0 15rpx;
+  border-radius: 18rpx;
+  min-width: auto;
+}
+
+/* --- 2. 遮罩层 --- */
+.connect-overlay {
+  position: absolute;
+  top: 0; left: 0; width: 100%; height: 100%;
+  background: rgba(255,255,255,0.98);
+  z-index: 200;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+.device-list { width: 500rpx; max-height: 200rpx; margin-top: 20rpx; border: 1px solid #eee; background: #fff;}
+.device-item { padding: 15rpx; border-bottom: 1px solid #eee; text-align: center; font-size: 24rpx; }
+
+/* --- 3. 手柄区域 (紧凑迷你版) --- */
+
+/* 按钮基础样式：从 80 改为 60 */
+.d-btn, .c-btn {
+  position: absolute;
+  width: 60rpx;   /* 关键修改：更小 */
+  height: 60rpx;  /* 关键修改：更小 */
+  line-height: 60rpx;
+  text-align: center;
+  border: 2rpx solid #d1d5db;
+  color: #2196F3;
+  font-weight: 800;
+  font-size: 26rpx; /* 字体适配 */
+  background: linear-gradient(145deg, #ffffff, #f0f0f0);
+  box-shadow: 2rpx 2rpx 4rpx rgba(0,0,0,0.1);
+  z-index: 10;
+  box-sizing: border-box;
+}
+
+.btn-hover {
+  background: #e3f2fd;
+  transform: scale(0.95);
+  box-shadow: inset 1rpx 1rpx 3rpx rgba(0,0,0,0.1);
+}
+
+/* === 左侧十字键 === */
+.left-pad {
+  position: absolute;
+  left: 60rpx;   
+  bottom: 30rpx; /* 稍微靠下 */
+  /* 3个按钮宽: 60*3 = 180 */
+  width: 180rpx; 
+  height: 180rpx;
+}
+.left-pad .d-btn { border-radius: 10rpx; }
+
+/* 网格布局：每格 60rpx */
+.btn-up    { top: 0; left: 60rpx; }
+.btn-left  { top: 60rpx; left: 0; }
+.btn-right { top: 60rpx; right: 0; }
+.btn-down  { bottom: 0; left: 60rpx; }
+
+/* === 右侧功能键 === */
+.right-pad {
+  position: absolute;
+  right: 60rpx;
+  bottom: 30rpx;
+  width: 180rpx;
+  height: 180rpx;
+}
+.right-pad .c-btn { border-radius: 50%; }
+
+/* 网格布局 */
+.btn-top    { top: 0; left: 60rpx; }     /* A */
+.btn-left2  { top: 60rpx; left: 0; }     /* B */
+.btn-right2 { top: 60rpx; right: 0; }    /* E */
+.btn-bottom { bottom: 0; left: 60rpx; }  /* F */
+
+/* === 中间区域 (START / EXIT) === */
+.center-pad {
+  position: absolute;
+  bottom: 40rpx; 
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: row; 
+  gap: 20rpx; /* 间距减小 */
+}
+
+.capsule-btn {
+  width: 100rpx; /* 宽度减小 */
+  height: 40rpx; /* 高度减小 */
+  line-height: 40rpx;
+  text-align: center;
+  border: 1px solid #ccc;
+  border-radius: 20rpx;
+  color: #666;
+  font-size: 20rpx; /* 字体减小 */
+  background: #fff;
+}
+
+.exit-btn {
+  color: #ff4d4f;
+  border-color: #ffa39e;
+}

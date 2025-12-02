@@ -1,0 +1,18 @@
+{
+  "pages": [
+    "pages/index/index"
+  ],
+  "window": {
+    "backgroundTextStyle": "light",
+    "navigationBarBackgroundColor": "#fff",
+    "navigationBarTitleText": "HC-08 手柄控制",
+    "navigationBarTextStyle": "black",
+    "pageOrientation": "landscape"
+  },
+  "permission": {
+    "scope.userBluetooth": {
+      "desc": "需要连接HC-08蓝牙模块进行控制"
+    }
+  },
+  "sitemapLocation": "sitemap.json"
+}

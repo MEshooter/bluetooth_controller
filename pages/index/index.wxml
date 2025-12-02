@@ -1,0 +1,55 @@
+<!-- index.wxml -->
+<view class="container">
+
+<!-- 1. 顶部状态栏 -->
+<view class="top-bar">
+  <view class="status-indicator" style="color: {{isConnected ? '#4caf50' : '#f44336'}}">
+    {{isConnected ? '● 已连接: ' + connectedName : '● 未连接'}}
+  </view>
+  
+  <view class="input-wrapper">
+    <input class="cmd-input" placeholder="输入CMD..." bindconfirm="sendInputCmd" confirm-type="send" value="{{inputText}}" bindinput="handleInput" />
+    <button type="primary" class="send-btn" bindtap="sendInputCmd">发送</button>
+  </view>
+</view>
+
+<!-- 2. 连接前的遮罩层 -->
+<view class="connect-overlay" wx:if="{{!isConnected}}">
+  <button type="primary" loading="{{isScanning}}" bindtap="startScan">
+    {{isScanning ? '正在搜索...' : '点击连接 HC-08'}}
+  </button>
+  <scroll-view scroll-y class="device-list" wx:if="{{devices.length > 0}}">
+    <view wx:for="{{devices}}" wx:key="deviceId" class="device-item" bindtap="connectDevice" data-id="{{item.deviceId}}" data-name="{{item.name}}">
+      {{item.name}} (信号: {{item.RSSI}})
+    </view>
+  </scroll-view>
+</view>
+
+<!-- 3. 游戏手柄控制区 -->
+<block wx:else>
+  
+  <!-- 左侧按键 (L R U D) -->
+  <view class="left-pad">
+      <view class="d-btn btn-up"    hover-class="btn-hover" bindtouchstart="handleBtnPress" bindtouchend="handleBtnRelease" data-char="U">U</view>
+      <view class="d-btn btn-left"  hover-class="btn-hover" bindtouchstart="handleBtnPress" bindtouchend="handleBtnRelease" data-char="L">L</view>
+      <view class="d-btn btn-right" hover-class="btn-hover" bindtouchstart="handleBtnPress" bindtouchend="handleBtnRelease" data-char="R">R</view>
+      <view class="d-btn btn-down"  hover-class="btn-hover" bindtouchstart="handleBtnPress" bindtouchend="handleBtnRelease" data-char="D">D</view>
+  </view>
+
+  <!-- 中间按键 (S, Exit) -->
+  <view class="center-pad">
+    <view class="capsule-btn" hover-class="btn-hover" bindtouchstart="handleBtnPress" bindtouchend="handleBtnRelease" data-char="S">START</view>
+    <view class="capsule-btn exit-btn" hover-class="btn-hover" bindtap="disconnect">EXIT</view>
+  </view>
+
+  <!-- 右侧按键 (A B E F) -->
+  <view class="right-pad">
+      <view class="c-btn btn-top"    hover-class="btn-hover" bindtouchstart="handleBtnPress" bindtouchend="handleBtnRelease" data-char="A">A</view>
+      <view class="c-btn btn-left2"  hover-class="btn-hover" bindtouchstart="handleBtnPress" bindtouchend="handleBtnRelease" data-char="B">B</view>
+      <view class="c-btn btn-right2" hover-class="btn-hover" bindtouchstart="handleBtnPress" bindtouchend="handleBtnRelease" data-char="E">E</view>
+      <view class="c-btn btn-bottom" hover-class="btn-hover" bindtouchstart="handleBtnPress" bindtouchend="handleBtnRelease" data-char="F">F</view>
+  </view>
+
+</block>
+
+</view>
