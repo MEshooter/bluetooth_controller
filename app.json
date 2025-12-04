@@ -12,6 +12,9 @@
   "permission": {
     "scope.userBluetooth": {
       "desc": "需要连接HC-08蓝牙模块进行控制"
+    },
+    "scope.userLocation": {
+      "desc": "Android设备需要位置权限才能扫描蓝牙"
     }
   },
   "sitemapLocation": "sitemap.json"

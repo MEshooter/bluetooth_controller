@@ -1,48 +1,78 @@
 <!-- index.wxml -->
 <view class="container">
 
-<!-- 1. 顶部状态栏 -->
-<view class="top-bar">
-  <view class="status-indicator" style="color: {{isConnected ? '#4caf50' : '#f44336'}}">
-    {{isConnected ? '● 已连接: ' + connectedName : '● 未连接'}}
-  </view>
-  
-  <view class="input-wrapper">
-    <input class="cmd-input" placeholder="输入CMD..." bindconfirm="sendInputCmd" confirm-type="send" value="{{inputText}}" bindinput="handleInput" />
-    <button type="primary" class="send-btn" bindtap="sendInputCmd">发送</button>
-  </view>
-</view>
-
-<!-- 2. 连接前的遮罩层 -->
+<!-- 1. 搜索与连接 -->
 <view class="connect-overlay" wx:if="{{!isConnected}}">
-  <button type="primary" loading="{{isScanning}}" bindtap="startScan">
-    {{isScanning ? '正在搜索...' : '点击连接 HC-08'}}
-  </button>
-  <scroll-view scroll-y class="device-list" wx:if="{{devices.length > 0}}">
-    <view wx:for="{{devices}}" wx:key="deviceId" class="device-item" bindtap="connectDevice" data-id="{{item.deviceId}}" data-name="{{item.name}}">
-      {{item.name}} (信号: {{item.RSSI}})
+  <view class="overlay-content">
+    <view class="scan-left">
+      <view class="overlay-title">HC-08 控制台</view>
+      <button type="primary" class="main-btn" loading="{{isScanning}}" bindtap="startScan">
+        {{isScanning ? '搜索中...' : '搜索蓝牙'}}
+      </button>
+      <button class="debug-btn" bindtap="enterDebugMode">跳过蓝牙调试 ></button>
     </view>
-  </scroll-view>
+    <view class="scan-right">
+      <view class="list-header">设备列表 ({{devices.length}})</view>
+      <scroll-view scroll-y class="device-scroll">
+        <block wx:if="{{devices.length > 0}}">
+          <view wx:for="{{devices}}" wx:key="deviceId" class="device-item" bindtap="connectDevice" data-id="{{item.deviceId}}" data-name="{{item.name}}">
+            <view class="dev-row">
+              <text class="dev-name">{{item.name}}</text>
+              <text class="dev-rssi">{{item.RSSI}}</text>
+            </view>
+            <view class="dev-id">ID: {{item.deviceId}}</view>
+          </view>
+        </block>
+        <view wx:else class="empty-tip">等待搜索...</view>
+      </scroll-view>
+    </view>
+  </view>
 </view>
 
-<!-- 3. 游戏手柄控制区 -->
+<!-- 2. 游戏手柄界面 -->
 <block wx:else>
-  
-  <!-- 左侧按键 (L R U D) -->
+  <!-- Top Bar -->
+  <view class="top-bar">
+    <view class="status-indicator">
+      <text style="color: {{connectedDeviceId === 'DEBUG' ? '#ff9800' : '#4caf50'}}">● {{connectedName}}</text>
+    </view>
+    <view class="input-wrapper">
+      <input class="cmd-input" placeholder="CMD..." bindconfirm="sendInputCmd" confirm-type="send" value="{{inputText}}" bindinput="handleInput" />
+      <button type="primary" class="send-btn" bindtap="sendInputCmd">发送</button>
+    </view>
+  </view>
+
+  <!-- 左侧 -->
   <view class="left-pad">
+    <block wx:if="{{!isJoystickMode}}">
       <view class="d-btn btn-up"    hover-class="btn-hover" bindtouchstart="handleBtnPress" bindtouchend="handleBtnRelease" data-char="U">U</view>
       <view class="d-btn btn-left"  hover-class="btn-hover" bindtouchstart="handleBtnPress" bindtouchend="handleBtnRelease" data-char="L">L</view>
       <view class="d-btn btn-right" hover-class="btn-hover" bindtouchstart="handleBtnPress" bindtouchend="handleBtnRelease" data-char="R">R</view>
       <view class="d-btn btn-down"  hover-class="btn-hover" bindtouchstart="handleBtnPress" bindtouchend="handleBtnRelease" data-char="D">D</view>
+    </block>
+    <block wx:else>
+      <view class="joystick-base" id="joystick-bg" catchtouchstart="stickStart" catchtouchmove="stickMove" catchtouchend="stickEnd">
+        <view class="joystick-knob" style="transform: translate({{stickX}}px, {{stickY}}px);"></view>
+      </view>
+    </block>
   </view>
 
-  <!-- 中间按键 (S, Exit) -->
+  <!-- 中间 (宽滑块 + 小按钮) -->
   <view class="center-pad">
-    <view class="capsule-btn" hover-class="btn-hover" bindtouchstart="handleBtnPress" bindtouchend="handleBtnRelease" data-char="S">START</view>
-    <view class="capsule-btn exit-btn" hover-class="btn-hover" bindtap="disconnect">EXIT</view>
+    <view class="speed-container">
+      <text class="speed-label">SPEED: {{speed}}</text>
+      <slider class="speed-slider" min="1" max="10" step="1" value="{{speed}}" block-size="24" activeColor="#2196F3" backgroundColor="#ddd" bindchange="handleSpeedChange" />
+    </view>
+    <view class="center-btns">
+      <view class="capsule-btn switch-btn" bindtap="toggleMode">{{isJoystickMode ? '模式:摇杆' : '模式:按键'}}</view>
+      <view class="row-btns">
+        <view class="capsule-btn small-btn" hover-class="btn-hover" bindtouchstart="handleBtnPress" bindtouchend="handleBtnRelease" data-char="S">START</view>
+        <view class="capsule-btn small-btn exit-btn" hover-class="btn-hover" bindtap="disconnect">EXIT</view>
+      </view>
+    </view>
   </view>
 
-  <!-- 右侧按键 (A B E F) -->
+  <!-- 右侧 -->
   <view class="right-pad">
       <view class="c-btn btn-top"    hover-class="btn-hover" bindtouchstart="handleBtnPress" bindtouchend="handleBtnRelease" data-char="A">A</view>
       <view class="c-btn btn-left2"  hover-class="btn-hover" bindtouchstart="handleBtnPress" bindtouchend="handleBtnRelease" data-char="B">B</view>
@@ -50,6 +80,10 @@
       <view class="c-btn btn-bottom" hover-class="btn-hover" bindtouchstart="handleBtnPress" bindtouchend="handleBtnRelease" data-char="F">F</view>
   </view>
 
-</block>
+  <!-- 迷你日志 -->
+  <scroll-view class="mini-console" scroll-y scroll-top="{{scrollTop}}">
+    <view wx:for="{{logList}}" wx:key="index" class="log-item">{{item}}</view>
+  </scroll-view>
 
+</block>
 </view>
