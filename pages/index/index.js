@@ -32,28 +32,31 @@ Page({
     const newLog = `[${time}] ${msg}`;
     
     let list = this.data.logList;
-    if (list.length > 20) list.shift(); // 保持最近20条
+    if (list.length > 20) list.shift(); 
     list.push(newLog);
     
     this.setData({ 
       logList: list,
-      scrollTop: list.length * 50 // 自动滚动
+      scrollTop: list.length * 50 
     });
   },
 
-  // --- 2. 核心发送逻辑 ---
+  // --- 2. 核心发送逻辑 (自动加换行 \n) ---
   sendData(str) {
     // 界面回显
-    this.addLog(`> ${str}`);
+    this.addLog(`Tx> ${str}`);
 
     if (this.data.connectedDeviceId === 'DEBUG') return;
     if (!this.data.isConnected) return;
 
+    // 协议封装：自动追加换行符
+    const sendStr = str + '\n';
+
     // 转 ArrayBuffer
-    const buffer = new ArrayBuffer(str.length);
+    const buffer = new ArrayBuffer(sendStr.length);
     const dataView = new DataView(buffer);
-    for (let i = 0; i < str.length; i++) {
-      dataView.setUint8(i, str.charCodeAt(i));
+    for (let i = 0; i < sendStr.length; i++) {
+      dataView.setUint8(i, sendStr.charCodeAt(i));
     }
 
     wx.writeBLECharacteristicValue({
@@ -77,9 +80,9 @@ Page({
     if (char) this.sendData(`# ${char.toLowerCase()}`);
   },
 
-  // --- 4. 复杂指令 (格式: : KEY P1 P2) ---
+  // --- 4. 复杂指令 ---
   
-  // 输入框发送 -> : CMD xxx
+  // 输入框发送 -> : CMD 内容
   sendInputCmd() {
     if (this.data.inputText) {
       this.sendData(`: CMD ${this.data.inputText}`);
@@ -93,27 +96,29 @@ Page({
     this.sendData(`: SPD ${val}`);
   },
 
-  // 模式切换 -> : SM JK / : SM BT
+  // 模式切换 -> : SM JS / : SM BT
   toggleMode() {
     const newMode = !this.data.isJoystickMode;
     this.setData({ isJoystickMode: newMode });
     
     if (newMode) {
-      // 切到摇杆模式
-      this.sendData(": SM JK");
+      this.sendData(": SM JS"); 
       setTimeout(() => { this.initJoystick(); }, 200);
     } else {
-      // 切到按键模式
-      this.sendData(": SM BT");
+      this.sendData(": SM BT"); 
     }
   },
 
-  // 摇杆移动 -> : V 0.50 -0.50
+  // --- 5. 摇杆逻辑 (核心修改：笛卡尔坐标系) ---
   stickMove(e) {
     if (!this.data.isConnected) return;
     const touch = e.touches[0];
+    
+    // 1. 计算屏幕坐标系下的偏移 (X向右增，Y向下增)
     let diffX = touch.pageX - this.data.centerX;
     let diffY = touch.pageY - this.data.centerY;
+    
+    // 2. 限制在圆内 (UI显示逻辑，保持屏幕坐标系)
     const distance = Math.sqrt(diffX * diffX + diffY * diffY);
     const maxRadius = this.data.joystickRadius;
 
@@ -122,36 +127,43 @@ Page({
       diffX = Math.cos(angle) * maxRadius;
       diffY = Math.sin(angle) * maxRadius;
     }
+    
+    // 更新UI (UI层必须使用屏幕坐标)
     this.setData({ stickX: diffX, stickY: diffY });
 
-    // 节流发送
+    // 3. 计算输出向量 (笛卡尔坐标系转换)
     const now = Date.now();
     if (now - this.data.lastSendTime > 100) {
+      // X轴：屏幕向右为正 -> 笛卡尔X正 (不变)
       const unitX = (diffX / maxRadius).toFixed(2);
-      const unitY = (diffY / maxRadius).toFixed(2);
-      // 统一用空格隔开
+      
+      // Y轴：屏幕向下为正 -> 笛卡尔Y负 (取反)
+      // 添加负号，使得向上推为正值，向下推为负值
+      const unitY = (-diffY / maxRadius).toFixed(2); 
+
       this.sendData(`: V ${unitX} ${unitY}`);
       this.data.lastSendTime = now;
     }
   },
+
   stickEnd() {
     this.setData({ stickX: 0, stickY: 0 });
     this.sendData(": V 0.00 0.00");
   },
 
-  // --- 5. 基础连接逻辑 ---
+  // --- 6. 基础连接逻辑 ---
   handleInput(e) { this.setData({ inputText: e.detail.value }); },
   
   enterDebugMode() {
     this.setData({ isConnected: true, connectedName: '调试模式', connectedDeviceId: 'DEBUG', isScanning: false });
-    this.addLog("调试模式已启动");
+    this.addLog("调试模式启动");
     wx.stopBluetoothDevicesDiscovery();
     setTimeout(() => { if(this.data.isJoystickMode) this.initJoystick(); }, 200);
   },
 
   startScan() {
     this.setData({ isScanning: true, devices: [], logList: [] });
-    this.addLog("开始搜索设备...");
+    this.addLog("开始搜索...");
     wx.openBluetoothAdapter({
       success: () => {
         wx.startBluetoothDevicesDiscovery({ allowDuplicatesKey: false });
@@ -175,7 +187,7 @@ Page({
     const { id, name } = e.currentTarget.dataset;
     wx.stopBluetoothDevicesDiscovery();
     wx.showLoading({ title: '连接中' });
-    this.addLog(`正在连接: ${name}`);
+    this.addLog(`连接: ${name}`);
     wx.createBLEConnection({
       deviceId: id,
       success: () => {
@@ -207,7 +219,7 @@ Page({
         if (c) { 
           this.setData({ characteristicId: c.uuid, isConnected: true }); 
           wx.hideLoading(); 
-          this.addLog("连接成功! 就绪.");
+          this.addLog("就绪.");
         }
       }
     });
@@ -218,7 +230,7 @@ Page({
       wx.closeBLEConnection({ deviceId: this.data.connectedDeviceId });
     }
     this.setData({ isConnected: false, devices: [] });
-    this.addLog("已断开连接");
+    this.addLog("断开连接");
   },
 
   initJoystick() {
