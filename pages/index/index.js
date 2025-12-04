@@ -25,6 +25,21 @@ Page({
     scrollTop: 0
   },
 
+  // --- 生命周期: 监听意外断开 ---
+  onLoad() {
+    // 注册蓝牙连接状态监听
+    wx.onBLEConnectionStateChange((res) => {
+      // 如果当前显示“已连接”，但底层状态变成了“未连接”
+      if (!res.connected && this.data.isConnected) {
+        this.addLog("⚠️ 蓝牙连接意外断开");
+        wx.showToast({ title: '蓝牙已断开', icon: 'none' });
+        
+        // 强制执行断开清理逻辑，回到初始页
+        this.disconnect(); 
+      }
+    });
+  },
+
   // --- 1. 日志处理 ---
   addLog(msg) {
     const now = new Date();
@@ -41,18 +56,15 @@ Page({
     });
   },
 
-  // --- 2. 核心发送逻辑 (自动加换行 \n) ---
+  // --- 2. 核心发送逻辑 ---
   sendData(str) {
-    // 界面回显
     this.addLog(`Tx> ${str}`);
 
     if (this.data.connectedDeviceId === 'DEBUG') return;
     if (!this.data.isConnected) return;
 
-    // 协议封装：自动追加换行符
-    const sendStr = str + '\n';
+    const sendStr = str + '\n'; // 自动追加换行
 
-    // 转 ArrayBuffer
     const buffer = new ArrayBuffer(sendStr.length);
     const dataView = new DataView(buffer);
     for (let i = 0; i < sendStr.length; i++) {
@@ -68,7 +80,7 @@ Page({
     });
   },
 
-  // --- 3. 单按键指令 (格式: # A) ---
+  // --- 3. 按键指令 (# A) ---
   handleBtnPress(e) {
     if (!this.data.isConnected) return;
     const char = e.currentTarget.dataset.char;
@@ -81,44 +93,34 @@ Page({
   },
 
   // --- 4. 复杂指令 ---
-  
-  // 输入框发送 -> : CMD 内容
   sendInputCmd() {
-    if (this.data.inputText) {
-      this.sendData(`: CMD ${this.data.inputText}`);
-    }
+    if (this.data.inputText) this.sendData(`: CMD ${this.data.inputText}`);
   },
 
-  // 速度调节 -> : SPD 5
   handleSpeedChange(e) {
     const val = e.detail.value;
     this.setData({ speed: val });
     this.sendData(`: SPD ${val}`);
   },
 
-  // 模式切换 -> : SM JS / : SM BT
   toggleMode() {
     const newMode = !this.data.isJoystickMode;
     this.setData({ isJoystickMode: newMode });
-    
     if (newMode) {
-      this.sendData(": SM JS"); 
+      this.sendData(": SM JS");
       setTimeout(() => { this.initJoystick(); }, 200);
     } else {
-      this.sendData(": SM BT"); 
+      this.sendData(": SM BT");
     }
   },
 
-  // --- 5. 摇杆逻辑 (核心修改：笛卡尔坐标系) ---
+  // 摇杆逻辑 (4位小数 + 笛卡尔坐标)
   stickMove(e) {
     if (!this.data.isConnected) return;
     const touch = e.touches[0];
-    
-    // 1. 计算屏幕坐标系下的偏移 (X向右增，Y向下增)
     let diffX = touch.pageX - this.data.centerX;
     let diffY = touch.pageY - this.data.centerY;
     
-    // 2. 限制在圆内 (UI显示逻辑，保持屏幕坐标系)
     const distance = Math.sqrt(diffX * diffX + diffY * diffY);
     const maxRadius = this.data.joystickRadius;
 
@@ -127,31 +129,22 @@ Page({
       diffX = Math.cos(angle) * maxRadius;
       diffY = Math.sin(angle) * maxRadius;
     }
-    
-    // 更新UI (UI层必须使用屏幕坐标)
     this.setData({ stickX: diffX, stickY: diffY });
 
-    // 3. 计算输出向量 (笛卡尔坐标系转换)
     const now = Date.now();
     if (now - this.data.lastSendTime > 100) {
-      // X轴：屏幕向右为正 -> 笛卡尔X正 (不变)
-      const unitX = (diffX / maxRadius).toFixed(2);
-      
-      // Y轴：屏幕向下为正 -> 笛卡尔Y负 (取反)
-      // 添加负号，使得向上推为正值，向下推为负值
-      const unitY = (-diffY / maxRadius).toFixed(2); 
-
+      const unitX = (diffX / maxRadius).toFixed(4);
+      const unitY = (-diffY / maxRadius).toFixed(4); // 取反
       this.sendData(`: V ${unitX} ${unitY}`);
       this.data.lastSendTime = now;
     }
   },
-
   stickEnd() {
     this.setData({ stickX: 0, stickY: 0 });
-    this.sendData(": V 0.00 0.00");
+    this.sendData(": V 0.0000 0.0000");
   },
 
-  // --- 6. 基础连接逻辑 ---
+  // --- 5. 基础连接逻辑 (含超时控制) ---
   handleInput(e) { this.setData({ inputText: e.detail.value }); },
   
   enterDebugMode() {
@@ -183,20 +176,71 @@ Page({
     });
   },
 
+  // 连接设备 (修复超时无法取消 Loading 的问题)
   connectDevice(e) {
     const { id, name } = e.currentTarget.dataset;
+    
+    // 1. 停止搜索 (这一步很重要，安卓上边搜边连容易卡死)
     wx.stopBluetoothDevicesDiscovery();
-    wx.showLoading({ title: '连接中' });
-    this.addLog(`连接: ${name}`);
+    
+    // 2. 开启 Loading，mask:true 防止用户乱点
+    wx.showLoading({ title: '连接中...', mask: true });
+    this.addLog(`尝试连接: ${name}`);
+
+    // 定义一个标志位，判断是否已经超时
+    let hasTimedOut = false;
+
+    // 3. 设置 JS 层面的超时定时器 (10秒)
+    const timeoutId = setTimeout(() => {
+      hasTimedOut = true; // 标记已超时
+      wx.hideLoading();   // 强制隐藏转圈
+      
+      this.addLog("❌ 连接超时 (强制终止)");
+      
+      // 弹窗提示
+      wx.showModal({
+        title: '连接超时',
+        content: '设备未响应。请尝试：\n1. 重启蓝牙或设备\n2. 确保设备未被连接',
+        showCancel: false
+      });
+
+      // 关键：超时后，无论底层在干嘛，强制尝试断开一次，释放资源
+      wx.closeBLEConnection({ deviceId: id });
+    }, 10000);
+
+    // 4. 调用微信 API 开始连接
     wx.createBLEConnection({
       deviceId: id,
+      timeout: 10000, // 【新增】告诉微信底层，超过10秒直接报 fail
       success: () => {
+        // 如果已经超时了，就算连接成功也要断开，防止 UI 逻辑错乱
+        if (hasTimedOut) {
+          wx.closeBLEConnection({ deviceId: id });
+          return;
+        }
+
+        // 正常连接成功
+        clearTimeout(timeoutId); // 清除定时器
+        
         this.setData({ connectedDeviceId: id, connectedName: name });
         this.getServices(id);
       },
-      fail: (err) => { 
-        wx.hideLoading(); 
-        this.addLog(`连接失败: ${err.errMsg}`);
+      fail: (err) => {
+        // 如果已经超时处理过了，这里就不要再处理了
+        if (hasTimedOut) return;
+
+        // 正常连接失败
+        clearTimeout(timeoutId); // 清除定时器
+        wx.hideLoading();
+        
+        // 错误码解析（方便调试）
+        let tip = '连接失败';
+        if (err.errCode === 10003) tip = '连接被断开';
+        if (err.errCode === 10012) tip = '连接超时(底层)';
+        if (err.errCode === 10009) tip = 'Android系统版本过低';
+
+        this.addLog(`❌ ${tip}: ${err.errMsg}`);
+        wx.showToast({ title: tip, icon: 'none' });
       }
     });
   },
@@ -219,18 +263,29 @@ Page({
         if (c) { 
           this.setData({ characteristicId: c.uuid, isConnected: true }); 
           wx.hideLoading(); 
-          this.addLog("就绪.");
+          this.addLog("✅ 连接成功! 就绪.");
         }
       }
     });
   },
 
+  // 断开连接 / 重置界面
   disconnect() {
+    // 如果是调试模式或已连接，尝试断开底层连接
     if (this.data.connectedDeviceId && this.data.connectedDeviceId !== 'DEBUG') {
       wx.closeBLEConnection({ deviceId: this.data.connectedDeviceId });
     }
-    this.setData({ isConnected: false, devices: [] });
-    this.addLog("断开连接");
+    
+    // 重置所有状态到初始值
+    this.setData({ 
+      isConnected: false, 
+      devices: [],
+      connectedDeviceId: '',
+      stickX: 0,
+      stickY: 0
+    });
+    
+    this.addLog("已断开，回到初始页");
   },
 
   initJoystick() {
