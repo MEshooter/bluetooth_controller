@@ -3,6 +3,7 @@ Page({
   data: {
     isConnected: false,
     isScanning: false,
+    isConnecting: false, // 新增：连接锁，防止重复点击
     devices: [],
     connectedDeviceId: '',
     serviceId: '',
@@ -20,51 +21,29 @@ Page({
     lastSendTime: 0,
     speed: 5,
 
-    // 日志系统
     logList: [],
     scrollTop: 0
-  },
-
-  // --- 生命周期: 监听意外断开 ---
-  onLoad() {
-    // 注册蓝牙连接状态监听
-    wx.onBLEConnectionStateChange((res) => {
-      // 如果当前显示“已连接”，但底层状态变成了“未连接”
-      if (!res.connected && this.data.isConnected) {
-        this.addLog("⚠️ 蓝牙连接意外断开");
-        wx.showToast({ title: '蓝牙已断开', icon: 'none' });
-        
-        // 强制执行断开清理逻辑，回到初始页
-        this.disconnect(); 
-      }
-    });
   },
 
   // --- 1. 日志处理 ---
   addLog(msg) {
     const now = new Date();
     const time = `${now.getHours().toString().padStart(2,0)}:${now.getMinutes().toString().padStart(2,0)}:${now.getSeconds().toString().padStart(2,0)}`;
-    const newLog = `[${time}] ${msg}`;
     
     let list = this.data.logList;
-    if (list.length > 20) list.shift(); 
-    list.push(newLog);
+    if (list.length > 20) list.shift();
+    list.push(`[${time}] ${msg}`);
     
-    this.setData({ 
-      logList: list,
-      scrollTop: list.length * 50 
-    });
+    this.setData({ logList: list, scrollTop: list.length * 50 });
   },
 
   // --- 2. 核心发送逻辑 ---
   sendData(str) {
     this.addLog(`Tx> ${str}`);
-
     if (this.data.connectedDeviceId === 'DEBUG') return;
     if (!this.data.isConnected) return;
 
-    const sendStr = str + '\n'; // 自动追加换行
-
+    const sendStr = str + '\n';
     const buffer = new ArrayBuffer(sendStr.length);
     const dataView = new DataView(buffer);
     for (let i = 0; i < sendStr.length; i++) {
@@ -80,7 +59,7 @@ Page({
     });
   },
 
-  // --- 3. 按键指令 (# A) ---
+  // --- 3. 按键与指令 ---
   handleBtnPress(e) {
     if (!this.data.isConnected) return;
     const char = e.currentTarget.dataset.char;
@@ -91,18 +70,14 @@ Page({
     const char = e.currentTarget.dataset.char;
     if (char) this.sendData(`# ${char.toLowerCase()}`);
   },
-
-  // --- 4. 复杂指令 ---
   sendInputCmd() {
     if (this.data.inputText) this.sendData(`: CMD ${this.data.inputText}`);
   },
-
   handleSpeedChange(e) {
     const val = e.detail.value;
     this.setData({ speed: val });
     this.sendData(`: SPD ${val}`);
   },
-
   toggleMode() {
     const newMode = !this.data.isJoystickMode;
     this.setData({ isJoystickMode: newMode });
@@ -114,13 +89,12 @@ Page({
     }
   },
 
-  // 摇杆逻辑 (4位小数 + 笛卡尔坐标)
+  // --- 4. 摇杆逻辑 ---
   stickMove(e) {
     if (!this.data.isConnected) return;
     const touch = e.touches[0];
     let diffX = touch.pageX - this.data.centerX;
     let diffY = touch.pageY - this.data.centerY;
-    
     const distance = Math.sqrt(diffX * diffX + diffY * diffY);
     const maxRadius = this.data.joystickRadius;
 
@@ -134,7 +108,7 @@ Page({
     const now = Date.now();
     if (now - this.data.lastSendTime > 100) {
       const unitX = (diffX / maxRadius).toFixed(4);
-      const unitY = (-diffY / maxRadius).toFixed(4); // 取反
+      const unitY = (-diffY / maxRadius).toFixed(4);
       this.sendData(`: V ${unitX} ${unitY}`);
       this.data.lastSendTime = now;
     }
@@ -143,10 +117,10 @@ Page({
     this.setData({ stickX: 0, stickY: 0 });
     this.sendData(": V 0.0000 0.0000");
   },
-
-  // --- 5. 基础连接逻辑 (含超时控制) ---
-  handleInput(e) { this.setData({ inputText: e.detail.value }); },
   
+  // --- 5. 基础逻辑 (iOS 修复版) ---
+  handleInput(e) { this.setData({ inputText: e.detail.value }); },
+
   enterDebugMode() {
     this.setData({ isConnected: true, connectedName: '调试模式', connectedDeviceId: 'DEBUG', isScanning: false });
     this.addLog("调试模式启动");
@@ -154,93 +128,141 @@ Page({
     setTimeout(() => { if(this.data.isJoystickMode) this.initJoystick(); }, 200);
   },
 
+  // 【修复 1】iOS 初始化修复：先关闭，再打开
   startScan() {
     this.setData({ isScanning: true, devices: [], logList: [] });
-    this.addLog("开始搜索...");
+    this.addLog("正在重置蓝牙...");
+
+    // 无论当前状态如何，先尝试关闭适配器，清理缓存状态
+    wx.closeBluetoothAdapter({
+      complete: () => {
+        // 延时一小会，确保 iOS 底层清理完毕
+        setTimeout(() => {
+          this.initBluetooth();
+        }, 200);
+      }
+    });
+  },
+
+  initBluetooth() {
+    this.addLog("正在初始化...");
     wx.openBluetoothAdapter({
       success: () => {
-        wx.startBluetoothDevicesDiscovery({ allowDuplicatesKey: false });
+        this.addLog("初始化成功");
+        this.startDiscovery();
+      },
+      // index.js -> initBluetooth -> fail 回调
+
+      fail: (err) => {
+        this.setData({ isScanning: false });
+
+        // --- 强力调试日志 ---
+        // 将错误对象完整转为字符串，这样无论它返回什么奇怪的东西都能看见
+        const debugMsg = (typeof err === 'object') ? JSON.stringify(err) : String(err);
+        this.addLog(`Init Fail: ${debugMsg}`);
+        
+        // --- 智能错误提取 ---
+        // 优先取 errCode，没有就取 errno，还没有就标记 Unknown
+        const code = err.errCode || err.errno || 'Unknown';
+        const msg = err.errMsg || '';
+
+        // --- 针对性的用户提示 ---
+        
+        // 情况1: 隐私协议被拦截 (常见于发布版未配置隐私指引)
+        if (msg.includes('privacy') || msg.includes('auth deny')) {
+          wx.showModal({
+            title: '隐私授权失败',
+            content: '小程序需要蓝牙和位置权限才能运行。请删除小程序后重新搜索进入，并同意隐私授权弹窗。',
+            showCancel: false
+          });
+          return;
+        }
+
+        // 情况2: 蓝牙没开 / GPS没开
+        if (code === 10001 || code === 1500102) {
+          wx.showModal({
+            title: '蓝牙/定位未开启',
+            content: '请下拉手机状态栏：\n1. 开启蓝牙图标\n2. 开启位置信息(GPS)图标',
+            showCancel: false
+          });
+          return;
+        }
+        
+        // 其他情况
+        wx.showToast({ title: `初始化误: ${code}`, icon: 'none' });
+      }
+    });
+  },
+
+  startDiscovery() {
+    wx.startBluetoothDevicesDiscovery({
+      allowDuplicatesKey: false,
+      success: () => {
+        this.addLog("正在扫描...");
         wx.onBluetoothDeviceFound((res) => {
           res.devices.forEach(device => {
-            if (device.name && !this.data.devices.some(d => d.deviceId === device.deviceId)) {
+            if (device.name && device.name.trim() !== '' && !this.data.devices.some(d => d.deviceId === device.deviceId)) {
               this.setData({ devices: [...this.data.devices, device] });
             }
           });
         });
       },
-      fail: () => {
+      fail: (err) => {
         this.setData({ isScanning: false });
-        wx.showToast({ title: '请开启蓝牙', icon: 'none' });
-        this.addLog("蓝牙初始化失败");
+        this.addLog(`Scan Fail: ${err.errMsg}`);
       }
     });
   },
 
-  // 连接设备 (修复超时无法取消 Loading 的问题)
+  // 【修复 2】连接逻辑修复：防止重复点击
   connectDevice(e) {
+    // 如果正在连接中，忽略点击
+    if (this.data.isConnecting) return;
+
     const { id, name } = e.currentTarget.dataset;
     
-    // 1. 停止搜索 (这一步很重要，安卓上边搜边连容易卡死)
+    this.addLog(`选中设备: ${name}`); // 打印日志证明点击生效
+
+    // 立即上锁
+    this.setData({ isConnecting: true });
+
     wx.stopBluetoothDevicesDiscovery();
-    
-    // 2. 开启 Loading，mask:true 防止用户乱点
     wx.showLoading({ title: '连接中...', mask: true });
-    this.addLog(`尝试连接: ${name}`);
 
-    // 定义一个标志位，判断是否已经超时
     let hasTimedOut = false;
-
-    // 3. 设置 JS 层面的超时定时器 (10秒)
     const timeoutId = setTimeout(() => {
-      hasTimedOut = true; // 标记已超时
-      wx.hideLoading();   // 强制隐藏转圈
-      
-      this.addLog("❌ 连接超时 (强制终止)");
-      
-      // 弹窗提示
-      wx.showModal({
-        title: '连接超时',
-        content: '设备未响应。请尝试：\n1. 重启蓝牙或设备\n2. 确保设备未被连接',
-        showCancel: false
-      });
-
-      // 关键：超时后，无论底层在干嘛，强制尝试断开一次，释放资源
+      hasTimedOut = true;
+      wx.hideLoading();
+      this.setData({ isConnecting: false }); // 解锁
+      wx.showModal({ title: '超时', content: '设备无响应', showCancel: false });
       wx.closeBLEConnection({ deviceId: id });
     }, 10000);
 
-    // 4. 调用微信 API 开始连接
     wx.createBLEConnection({
       deviceId: id,
-      timeout: 10000, // 【新增】告诉微信底层，超过10秒直接报 fail
+      timeout: 10000,
       success: () => {
-        // 如果已经超时了，就算连接成功也要断开，防止 UI 逻辑错乱
         if (hasTimedOut) {
           wx.closeBLEConnection({ deviceId: id });
           return;
         }
-
-        // 正常连接成功
-        clearTimeout(timeoutId); // 清除定时器
+        clearTimeout(timeoutId);
         
-        this.setData({ connectedDeviceId: id, connectedName: name });
+        this.setData({ 
+          connectedDeviceId: id, 
+          connectedName: name,
+          isConnecting: false // 解锁
+        });
         this.getServices(id);
       },
       fail: (err) => {
-        // 如果已经超时处理过了，这里就不要再处理了
         if (hasTimedOut) return;
-
-        // 正常连接失败
-        clearTimeout(timeoutId); // 清除定时器
+        clearTimeout(timeoutId);
         wx.hideLoading();
         
-        // 错误码解析（方便调试）
-        let tip = '连接失败';
-        if (err.errCode === 10003) tip = '连接被断开';
-        if (err.errCode === 10012) tip = '连接超时(底层)';
-        if (err.errCode === 10009) tip = 'Android系统版本过低';
-
-        this.addLog(`❌ ${tip}: ${err.errMsg}`);
-        wx.showToast({ title: tip, icon: 'none' });
+        this.setData({ isConnecting: false }); // 解锁
+        this.addLog(`Err: ${err.errMsg}`);
+        wx.showToast({ title: '连接失败', icon: 'none' });
       }
     });
   },
@@ -263,29 +285,18 @@ Page({
         if (c) { 
           this.setData({ characteristicId: c.uuid, isConnected: true }); 
           wx.hideLoading(); 
-          this.addLog("✅ 连接成功! 就绪.");
+          this.addLog("Ready.");
         }
       }
     });
   },
 
-  // 断开连接 / 重置界面
   disconnect() {
-    // 如果是调试模式或已连接，尝试断开底层连接
     if (this.data.connectedDeviceId && this.data.connectedDeviceId !== 'DEBUG') {
       wx.closeBLEConnection({ deviceId: this.data.connectedDeviceId });
     }
-    
-    // 重置所有状态到初始值
-    this.setData({ 
-      isConnected: false, 
-      devices: [],
-      connectedDeviceId: '',
-      stickX: 0,
-      stickY: 0
-    });
-    
-    this.addLog("已断开，回到初始页");
+    this.setData({ isConnected: false, devices: [], isConnecting: false });
+    this.addLog("断开连接");
   },
 
   initJoystick() {

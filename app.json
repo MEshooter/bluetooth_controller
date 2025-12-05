@@ -17,5 +17,8 @@
       "desc": "Android设备需要位置权限才能扫描蓝牙"
     }
   },
+  "useExtendedLib": {
+    "weui": true
+  },
   "sitemapLocation": "sitemap.json"
 }
