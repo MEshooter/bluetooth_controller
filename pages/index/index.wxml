@@ -1,18 +1,31 @@
 <!-- index.wxml -->
 <view class="container">
 
-<!-- 1. 搜索与连接 -->
+<!-- 1. 搜索与连接遮罩 -->
 <view class="connect-overlay" wx:if="{{!isConnected}}">
+  
+  <!-- 【新增】语言切换按钮 -->
+  <view class="lang-switch" bindtap="toggleLang">
+    {{curLang === 'zh' ? 'EN' : '中'}}
+  </view>
+
   <view class="overlay-content">
     <view class="scan-left">
-      <view class="overlay-title">HC-08 控制台</view>
+      <!-- 标题变量 -->
+      <view class="overlay-title">{{t.title}}</view>
+      
+      <!-- 按钮文字变量 -->
       <button type="primary" class="main-btn" loading="{{isScanning}}" bindtap="startScan">
-        {{isScanning ? '搜索中...' : '搜索蓝牙'}}
+        {{isScanning ? t.scanning : t.scan}}
       </button>
-      <button class="debug-btn" bindtap="enterDebugMode">跳过蓝牙调试 ></button>
+      
+      <!-- 调试文字变量 -->
+      <button class="debug-btn" bindtap="enterDebugMode">{{t.debug}}</button>
     </view>
     <view class="scan-right">
-      <view class="list-header">设备列表 ({{devices.length}})</view>
+      <!-- 列表标题变量 -->
+      <view class="list-header">{{t.list_title}} ({{devices.length}})</view>
+      
       <scroll-view scroll-y class="device-scroll">
         <block wx:if="{{devices.length > 0}}">
           <view wx:for="{{devices}}" wx:key="deviceId" class="device-item" bindtap="connectDevice" data-id="{{item.deviceId}}" data-name="{{item.name}}">
@@ -23,7 +36,8 @@
             <view class="dev-id">ID: {{item.deviceId}}</view>
           </view>
         </block>
-        <view wx:else class="empty-tip">等待搜索...</view>
+        <!-- 空状态变量 -->
+        <view wx:else class="empty-tip">{{t.empty}}</view>
       </scroll-view>
     </view>
   </view>
@@ -31,24 +45,35 @@
 
 <!-- 2. 游戏手柄界面 -->
 <block wx:else>
-  <!-- Top Bar -->
-  <view class="top-bar">
-    <view class="status-indicator">
-      <text style="color: {{connectedDeviceId === 'DEBUG' ? '#ff9800' : '#4caf50'}}">● {{connectedName}}</text>
-    </view>
-    <view class="input-wrapper">
-      <input class="cmd-input" placeholder="CMD..." bindconfirm="sendInputCmd" confirm-type="send" value="{{inputText}}" bindinput="handleInput" />
-      <button type="primary" class="send-btn" bindtap="sendInputCmd">发送</button>
-    </view>
+
+  <!-- 日志框 -->
+  <scroll-view class="mini-console" scroll-y scroll-top="{{scrollTop}}">
+    <block wx:for="{{logList}}" wx:key="index">
+      <view class="log-item log-{{item.type}}">
+        [{{item.time}}] {{item.msg}}
+      </view>
+    </block>
+  </scroll-view>
+
+  <!-- 状态栏 -->
+  <view class="status-badge">
+    <view class="status-dot" style="background: {{connectedDeviceId === 'DEBUG' ? '#ff9800' : '#4caf50'}}"></view>
+    <text>{{connectedName}}</text>
   </view>
 
-  <!-- 左侧 -->
+  <!-- CMD -->
+  <view class="cmd-badge">
+    <input class="mini-input" placeholder="CMD" confirm-type="send" bindconfirm="sendInputCmd" value="{{inputText}}" bindinput="handleInput" />
+    <view class="mini-send" bindtap="sendInputCmd">></view>
+  </view>
+
+  <!-- 左手柄 -->
   <view class="left-pad">
     <block wx:if="{{!isJoystickMode}}">
-      <view class="d-btn btn-up"    hover-class="btn-hover" bindtouchstart="handleBtnPress" bindtouchend="handleBtnRelease" data-char="U">U</view>
-      <view class="d-btn btn-left"  hover-class="btn-hover" bindtouchstart="handleBtnPress" bindtouchend="handleBtnRelease" data-char="L">L</view>
-      <view class="d-btn btn-right" hover-class="btn-hover" bindtouchstart="handleBtnPress" bindtouchend="handleBtnRelease" data-char="R">R</view>
-      <view class="d-btn btn-down"  hover-class="btn-hover" bindtouchstart="handleBtnPress" bindtouchend="handleBtnRelease" data-char="D">D</view>
+      <view class="d-btn btn-up"    hover-class="btn-hover" hover-start-time="0" hover-stay-time="0" bindtouchstart="handleBtnPress" bindtouchend="handleBtnRelease" data-char="U">U</view>
+      <view class="d-btn btn-left"  hover-class="btn-hover" hover-start-time="0" hover-stay-time="0" bindtouchstart="handleBtnPress" bindtouchend="handleBtnRelease" data-char="L">L</view>
+      <view class="d-btn btn-right" hover-class="btn-hover" hover-start-time="0" hover-stay-time="0" bindtouchstart="handleBtnPress" bindtouchend="handleBtnRelease" data-char="R">R</view>
+      <view class="d-btn btn-down"  hover-class="btn-hover" hover-start-time="0" hover-stay-time="0" bindtouchstart="handleBtnPress" bindtouchend="handleBtnRelease" data-char="D">D</view>
     </block>
     <block wx:else>
       <view class="joystick-base" id="joystick-bg" catchtouchstart="stickStart" catchtouchmove="stickMove" catchtouchend="stickEnd">
@@ -57,33 +82,83 @@
     </block>
   </view>
 
-  <!-- 中间 (宽滑块 + 小按钮) -->
+  <!-- 中间区域 -->
   <view class="center-pad">
     <view class="speed-container">
-      <text class="speed-label">SPEED: {{speed}}</text>
+      <!-- 速度变量 -->
+      <text class="speed-label">{{t.speed}}: {{speed}}</text>
       <slider class="speed-slider" min="1" max="10" step="1" value="{{speed}}" block-size="24" activeColor="#2196F3" backgroundColor="#ddd" bindchange="handleSpeedChange" />
     </view>
     <view class="center-btns">
-      <view class="capsule-btn switch-btn" bindtap="toggleMode">{{isJoystickMode ? '模式:摇杆' : '模式:按键'}}</view>
+      <!-- 模式变量 -->
+      <view class="switch-btn" bindtap="toggleMode">{{isJoystickMode ? t.mode_js : t.mode_btn}}</view>
       <view class="row-btns">
-        <view class="capsule-btn small-btn" hover-class="btn-hover" bindtouchstart="handleBtnPress" bindtouchend="handleBtnRelease" data-char="S">START</view>
-        <view class="capsule-btn small-btn exit-btn" hover-class="btn-hover" bindtap="disconnect">EXIT</view>
+        <view class="small-btn cam-btn" hover-class="btn-hover" bindtap="openCamera">CAM</view>
+        <view class="small-btn" hover-class="btn-hover" hover-start-time="0" hover-stay-time="0" bindtouchstart="handleBtnPress" bindtouchend="handleBtnRelease" data-char="S">START</view>
+        <view class="small-btn exit-btn" hover-class="btn-hover" hover-start-time="0" hover-stay-time="0" bindtap="disconnect">EXIT</view>
       </view>
     </view>
   </view>
 
-  <!-- 右侧 -->
+  <!-- 右手柄 -->
   <view class="right-pad">
-      <view class="c-btn btn-top"    hover-class="btn-hover" bindtouchstart="handleBtnPress" bindtouchend="handleBtnRelease" data-char="A">A</view>
-      <view class="c-btn btn-left2"  hover-class="btn-hover" bindtouchstart="handleBtnPress" bindtouchend="handleBtnRelease" data-char="B">B</view>
-      <view class="c-btn btn-right2" hover-class="btn-hover" bindtouchstart="handleBtnPress" bindtouchend="handleBtnRelease" data-char="E">E</view>
-      <view class="c-btn btn-bottom" hover-class="btn-hover" bindtouchstart="handleBtnPress" bindtouchend="handleBtnRelease" data-char="F">F</view>
+    <view class="c-btn btn-top"    hover-class="btn-hover" hover-start-time="0" hover-stay-time="0" bindtouchstart="handleBtnPress" bindtouchend="handleBtnRelease" data-char="A">A</view>
+    <view class="c-btn btn-left2"  hover-class="btn-hover" hover-start-time="0" hover-stay-time="0" bindtouchstart="handleBtnPress" bindtouchend="handleBtnRelease" data-char="B">B</view>
+    <view class="c-btn btn-right2" hover-class="btn-hover" hover-start-time="0" hover-stay-time="0" bindtouchstart="handleBtnPress" bindtouchend="handleBtnRelease" data-char="E">E</view>
+    <view class="c-btn btn-bottom" hover-class="btn-hover" hover-start-time="0" hover-stay-time="0" bindtouchstart="handleBtnPress" bindtouchend="handleBtnRelease" data-char="F">F</view>
   </view>
 
-  <!-- 迷你日志 -->
-  <scroll-view class="mini-console" scroll-y scroll-top="{{scrollTop}}">
-    <view wx:for="{{logList}}" wx:key="index" class="log-item">{{item}}</view>
-  </scroll-view>
+  <!-- 左侧控制条 (Pitch) -->
+  <view class="cam-ctrl-group ptz-left">
+    <view class="cam-round-btn" hover-class="cam-hover" hover-start-time="0" hover-stay-time="0" bindtouchstart="startCamMove" bindtouchend="stopCamMove" data-dir="D">▼</view>
+    <view class="cam-info"><text class="cam-val">PITCH {{camAngleUD}}°</text></view>
+    <view class="cam-round-btn" hover-class="cam-hover" hover-start-time="0" hover-stay-time="0" bindtouchstart="startCamMove" bindtouchend="stopCamMove" data-dir="U">▲</view>
+  </view>
+
+  <!-- 右侧控制条 (Yaw) -->
+  <view class="cam-ctrl-group ptz-right">
+    <view class="cam-round-btn" hover-class="cam-hover" hover-start-time="0" hover-stay-time="0" bindtouchstart="startCamMove" bindtouchend="stopCamMove" data-dir="L">◀</view>
+    <view class="cam-info"><text class="cam-val">YAW {{camAngleLR}}°</text></view>
+    <view class="cam-round-btn" hover-class="cam-hover" hover-start-time="0" hover-stay-time="0" bindtouchstart="startCamMove" bindtouchend="stopCamMove" data-dir="R">▶</view>
+  </view>
+
+  <!-- 视频窗口 -->
+  <movable-area class="drag-area" wx:if="{{isVideoMode}}">
+    <movable-view 
+      class="drag-view" 
+      direction="all" 
+      x="{{videoX}}" 
+      y="{{videoY}}" 
+      out-of-bounds="false" 
+      damping="30"
+    >
+      <canvas type="2d" id="videoCanvas" class="mjpeg-player"></canvas>
+      <view class="ui-close-btn" catchtap="closeCamera">
+        <view class="ui-close-text">×</view>
+      </view>
+
+      <view class="cam-tools">
+        <view class="tool-btn" catchtap="takePhoto" hover-class="tool-hover" hover-start-time="0" hover-stay-time="0">
+          <view class="css-icon icon-dot-white"></view>
+        </view>
+        <view class="tool-btn" catchtap="toggleRecord" hover-class="tool-hover" hover-start-time="0" hover-stay-time="0">
+          <view class="css-icon {{isRecording ? 'icon-square-red' : 'icon-dot-red'}}"></view>
+        </view>
+        <view class="tool-btn text-btn {{isAI ? 'btn-active' : ''}}" 
+              catchtap="toggleAI" hover-class="tool-hover" hover-start-time="0" hover-stay-time="0">
+          AI
+        </view>
+        <view class="tool-btn text-btn {{isTRK ? 'btn-active' : ''}}" 
+              catchtap="toggleTRK" hover-class="tool-hover" hover-start-time="0" hover-stay-time="0">
+          TRK
+        </view>
+      </view>
+
+      <!-- 连接变量 -->
+      <view class="ui-loading" wx:if="{{videoLoading}}"><text>{{t.connect}}</text></view>
+      <view class="ui-drag-bar"></view>
+    </movable-view>
+  </movable-area>
 
 </block>
 </view>
