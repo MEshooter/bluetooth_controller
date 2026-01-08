@@ -1,22 +1,22 @@
-/* === 全局布局 === */
+/* === Global Layout === */
 page { width: 100vw; height: 100vh; overflow: hidden; background-color: #f0f2f5; position: relative; overscroll-behavior: none; }
 .container { width: 100vw; height: 100vh; position: relative; overflow: hidden; }
 
-/* 强制提高层级，防止遮挡 */
+/* Force Z-Index Layering to prevent blocking */
 .left-pad, .right-pad, .center-pad { z-index: 50 !important; }
 
-/* === 日志系统 (顶部居中) === */
+/* === Log Console (Top Center) === */
 .mini-console {
   position: absolute; top: 0; left: 50%; transform: translateX(-50%);
-  width: 300rpx; height: 60rpx;
+  width: 300rpx; height: 60rpx; padding: 8rpx 15rpx;
   background: rgba(0,0,0,0.6); border-radius: 0 0 12rpx 12rpx;
-  padding: 8rpx 15rpx; box-sizing: border-box; z-index: 90; pointer-events: auto;
+  box-sizing: border-box; z-index: 90; pointer-events: auto;
 }
 .mini-console::-webkit-scrollbar { width: 0; height: 0; color: transparent; }
 .log-item { font-size: 11rpx; font-family: monospace; line-height: 1.4; word-break: break-all; margin-bottom: 2rpx; }
 .log-sys { color: #bdbdbd; } .log-tx { color: #69f0ae; } .log-rx { color: #ffd740; }
 
-/* === 顶部胶囊 (状态 & CMD) === */
+/* === Top Status & CMD Capsules === */
 .status-badge, .cmd-badge {
   position: absolute; top: 10rpx; height: 40rpx;
   background: rgba(255, 255, 255, 0.8); border-radius: 20rpx;
@@ -29,14 +29,26 @@ page { width: 100vw; height: 100vh; overflow: hidden; background-color: #f0f2f5;
 
 .cmd-badge { right: 10rpx; padding-left: 15rpx; }
 .mini-input { width: 80rpx; height: 40rpx; min-height: 40rpx; font-size: 18rpx; color: #333; }
-.mini-send { width: 50rpx; height: 40rpx; line-height: 40rpx; text-align: center; font-size: 20rpx; font-weight: bold; color: #2196F3; border-left: 1px solid #eee; }
+.mini-send {
+  width: 50rpx; height: 40rpx; line-height: 40rpx; text-align: center;
+  font-size: 20rpx; font-weight: bold; color: #2196F3; border-left: 1px solid #eee;
+}
 .mini-send:active { background: #eee; border-radius: 0 20rpx 20rpx 0; }
 
-/* === 搜索连接遮罩 === */
-.connect-overlay { position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; background: #f8f9fa; z-index: 999; display: flex; justify-content: center; align-items: center; }
-.overlay-content { width: 600rpx; height: 280rpx; display: flex; background: #fff; border-radius: 12rpx; box-shadow: 0 5rpx 20rpx rgba(0,0,0,0.1); padding: 20rpx; box-sizing: border-box; }
+/* === Connection Overlay === */
+.connect-overlay {
+  position: absolute; top: 0; left: 0; width: 100vw; height: 100vh;
+  background: #f8f9fa; z-index: 999; display: flex; justify-content: center; align-items: center;
+}
+.overlay-content {
+  width: 600rpx; height: 280rpx; display: flex; padding: 20rpx;
+  background: #fff; border-radius: 12rpx; box-shadow: 0 5rpx 20rpx rgba(0,0,0,0.1); box-sizing: border-box;
+}
 
-.scan-left { flex: 0.8; display: flex; flex-direction: column; justify-content: center; align-items: center; border-right: 1px solid #eee; padding-right: 15rpx; }
+.scan-left {
+  flex: 0.8; display: flex; flex-direction: column; justify-content: center; align-items: center;
+  border-right: 1px solid #eee; padding-right: 15rpx;
+}
 .overlay-title { font-size: 20rpx; margin-bottom: 20rpx; color: #333; font-weight: bold; }
 .main-btn { width: 100% !important; height: 44rpx; line-height: 44rpx; font-size: 16rpx; border-radius: 22rpx; }
 .debug-btn { margin-top: 20rpx; background: transparent; color: #aaa; font-size: 14rpx; border: none; padding: 0; }
@@ -44,7 +56,10 @@ page { width: 100vw; height: 100vh; overflow: hidden; background-color: #f0f2f5;
 
 .scan-right { flex: 1.2; display: flex; flex-direction: column; padding-left: 15rpx; height: 100%; }
 .list-header { font-size: 16rpx; color: #999; margin-bottom: 8rpx; font-weight: bold; flex-shrink: 0; }
-.device-scroll { flex: 1; height: 100%; background: #fafafa; border-radius: 6rpx; border: 1px solid #eee; padding: 6rpx; box-sizing: border-box; }
+.device-scroll {
+  flex: 1; height: 100%; background: #fafafa;
+  border-radius: 6rpx; border: 1px solid #eee; padding: 6rpx; box-sizing: border-box;
+}
 .device-item { padding: 8rpx; border-bottom: 1px solid #eee; background: #fff; margin-bottom: 6rpx; border-radius: 4rpx; }
 .device-item:active { background-color: #e0e0e0; }
 .dev-row { display: flex; justify-content: space-between; align-items: center; }
@@ -53,7 +68,7 @@ page { width: 100vw; height: 100vh; overflow: hidden; background-color: #f0f2f5;
 .dev-id { font-size: 10rpx; color: #ccc; margin-top: 2rpx; }
 .empty-tip { font-size: 12rpx; color: #ccc; text-align: center; margin-top: 30rpx; }
 
-/* === 手柄区域 === */
+/* === Controller Pads === */
 .d-btn, .c-btn {
   position: absolute; width: 60rpx; height: 60rpx; line-height: 60rpx; text-align: center;
   border: 2rpx solid #d1d5db; color: #2196F3; font-weight: 800; font-size: 24rpx;
@@ -62,31 +77,48 @@ page { width: 100vw; height: 100vh; overflow: hidden; background-color: #f0f2f5;
 }
 .btn-hover { background: #e3f2fd; transform: scale(0.95); }
 
-/* 左手柄 */
+/* Left Pad */
 .left-pad { position: absolute; left: 60rpx; top: 38%; transform: translateY(-50%); width: 180rpx; height: 180rpx; z-index: 50; }
 .left-pad .d-btn { border-radius: 10rpx; }
 .btn-up { top: 0; left: 60rpx; } .btn-left { top: 60rpx; left: 0; } .btn-right { top: 60rpx; right: 0; } .btn-down { bottom: 0; left: 60rpx; }
-.joystick-base { width: 100%; height: 100%; border-radius: 50%; background: rgba(0,0,0,0.05); border: 2rpx solid #ccc; position: relative; box-sizing: border-box; }
-.joystick-knob { width: 80rpx; height: 80rpx; border-radius: 50%; background: #2196F3; position: absolute; top: 50%; left: 50%; margin: -40rpx 0 0 -40rpx; box-shadow: 0 4rpx 10rpx rgba(33, 150, 243, 0.4); }
+.joystick-base {
+  width: 100%; height: 100%; border-radius: 50%; background: rgba(0,0,0,0.05);
+  border: 2rpx solid #ccc; position: relative; box-sizing: border-box;
+}
+.joystick-knob {
+  width: 80rpx; height: 80rpx; border-radius: 50%; background: #2196F3;
+  position: absolute; top: 50%; left: 50%; margin: -40rpx 0 0 -40rpx;
+  box-shadow: 0 4rpx 10rpx rgba(33, 150, 243, 0.4);
+}
 
-/* 右手柄 */
+/* Right Pad */
 .right-pad { position: absolute; right: 60rpx; top: 38%; transform: translateY(-50%); width: 180rpx; height: 180rpx; z-index: 50; }
 .right-pad .c-btn { border-radius: 50%; }
 .btn-top { top: 0; left: 60rpx; } .btn-left2 { top: 60rpx; left: 0; } .btn-right2 { top: 60rpx; right: 0; } .btn-bottom { bottom: 0; left: 60rpx; }
 
-/* 中间区域 */
-.center-pad { position: absolute; top: 42%; left: 50%; transform: translate(-50%, -50%); display: flex; flex-direction: column; align-items: center; width: 220rpx; z-index: 50; }
+/* Center Pad */
+.center-pad {
+  position: absolute; top: 42%; left: 50%; transform: translate(-50%, -50%);
+  display: flex; flex-direction: column; align-items: center; width: 220rpx; z-index: 50;
+}
 .speed-container { width: 100%; display: flex; flex-direction: column; align-items: center; margin-bottom: 15rpx; }
 .speed-label { font-size: 18rpx; color: #555; font-weight: bold; margin-bottom: 2rpx; }
 .speed-slider { width: 95%; margin: 0; }
 .center-btns { width: 100%; display: flex; flex-direction: column; gap: 15rpx; align-items: center; }
-.switch-btn { width: 140rpx; height: 36rpx; line-height: 36rpx; text-align: center; border: 1px solid #b2ebf2; border-radius: 18rpx; color: #006064; background-color: #e0f7fa; font-weight: bold; font-size: 18rpx; }
+.switch-btn {
+  width: 140rpx; height: 36rpx; line-height: 36rpx; text-align: center;
+  border: 1px solid #b2ebf2; border-radius: 18rpx; color: #006064;
+  background-color: #e0f7fa; font-weight: bold; font-size: 18rpx;
+}
 .row-btns { display: flex; flex-direction: row; gap: 20rpx; }
-.small-btn { width: 60rpx; height: 30rpx; line-height: 28rpx; text-align: center; border: 1px solid #ccc; border-radius: 15rpx; color: #666; font-size: 14rpx; background: #fff; }
+.small-btn {
+  width: 60rpx; height: 30rpx; line-height: 28rpx; text-align: center;
+  border: 1px solid #ccc; border-radius: 15rpx; color: #666; font-size: 14rpx; background: #fff;
+}
 .exit-btn { color: #ff4d4f; border-color: #ffa39e; }
 .cam-btn { color: #fff !important; background: #2196F3 !important; border: 1px solid #1976D2 !important; font-weight: bold; }
 
-/* === 视频窗口 === */
+/* === Video Window === */
 .drag-area { position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 900; pointer-events: none; }
 .drag-view {
   width: 320rpx; height: 240rpx; background-color: #000; border: 2rpx solid #fff;
@@ -95,35 +127,55 @@ page { width: 100vw; height: 100vh; overflow: hidden; background-color: #f0f2f5;
 }
 .mjpeg-player { width: 100%; height: 100%; display: block; background-color: #000; will-change: transform; }
 
-/* 视频UI: 关闭与加载 */
-.ui-close-btn { position: absolute; top: 0; right: 0; width: 60rpx; height: 60rpx; background: rgba(0,0,0,0.4); display: flex; justify-content: center; align-items: center; z-index: 999; border-bottom-left-radius: 12rpx; }
+/* UI: Close & Loading */
+.ui-close-btn {
+  position: absolute; top: 0; right: 0; width: 60rpx; height: 60rpx;
+  background: rgba(0,0,0,0.4); display: flex; justify-content: center; align-items: center;
+  z-index: 999; border-bottom-left-radius: 12rpx;
+}
 .ui-close-btn:active { background: rgba(255,0,0,0.6); }
 .ui-close-text { color: #fff; font-size: 40rpx; font-weight: bold; line-height: 1; margin-top: -4rpx; }
-.ui-loading { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; justify-content: center; align-items: center; background: #222; z-index: 10; }
+.ui-loading {
+  position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+  display: flex; justify-content: center; align-items: center; background: #222; z-index: 10;
+}
 .ui-loading text { color: #aaa; font-size: 24rpx; }
-.ui-drag-bar { position: absolute; bottom: 0; left: 0; width: 100%; height: 12rpx; background: linear-gradient(to top, rgba(0,0,0,0.6), transparent); display: flex; justify-content: center; }
-.ui-drag-bar::after { content: ''; display: block; width: 80rpx; height: 6rpx; background: rgba(255,255,255,0.4); border-radius: 4rpx; margin-top: 4rpx; }
+.ui-drag-bar {
+  position: absolute; bottom: 0; left: 0; width: 100%; height: 12rpx;
+  background: linear-gradient(to top, rgba(0,0,0,0.6), transparent); display: flex; justify-content: center;
+}
+.ui-drag-bar::after {
+  content: ''; display: block; width: 80rpx; height: 6rpx;
+  background: rgba(255,255,255,0.4); border-radius: 4rpx; margin-top: 4rpx;
+}
 
-/* === 侧边工具栏 (拍照/AI等) === */
-.cam-tools { position: absolute; top: 70rpx; right: 0; width: 60rpx; display: flex; flex-direction: column; align-items: center; gap: 10rpx; z-index: 99; }
+/* === Side Tools (Photo/AI) === */
+.cam-tools {
+  position: absolute; top: 70rpx; right: 0; width: 60rpx;
+  display: flex; flex-direction: column; align-items: center; gap: 10rpx; z-index: 99;
+}
 .tool-btn {
   width: 30rpx; height: 30rpx; background: rgba(0,0,0,0.6); border-radius: 50%;
-  display: flex; justify-content: center; align-items: center; border: 1px solid rgba(255,255,255,0.3);
-  transition: all 0.2s; flex-shrink: 0;
+  display: flex; justify-content: center; align-items: center;
+  border: 1px solid rgba(255,255,255,0.3); transition: all 0.2s; flex-shrink: 0;
 }
 .css-icon { width: 14rpx; height: 14rpx; }
 .icon-dot-white { background-color: #fff; border-radius: 50%; }
 .icon-dot-red { background-color: #ff4d4f; border-radius: 50%; }
 .icon-square-red { background-color: #ff4d4f; border-radius: 2rpx; width: 12rpx; height: 12rpx; }
 .text-btn { font-size: 12rpx; font-weight: bold; color: #fff; line-height: 1; }
-.btn-active { background: #ffffff !important; color: #000000 !important; border-color: #fff !important; box-shadow: 0 0 6rpx rgba(255,255,255,0.5); }
+.btn-active {
+  background: #ffffff !important; color: #000000 !important;
+  border-color: #fff !important; box-shadow: 0 0 6rpx rgba(255,255,255,0.5);
+}
 .tool-hover { transform: scale(0.9); opacity: 0.8; }
 
-/* === 云台控制区 (PTZ) === */
+/* === PTZ Control === */
 .cam-ctrl-group {
   position: absolute; top: 62%; width: 180rpx; height: 40rpx;
   display: flex; justify-content: space-between; align-items: center;
-  background: rgba(255,255,255,0.4); border-radius: 22rpx; padding: 0 6rpx; box-sizing: border-box; z-index: 60;
+  background: rgba(255,255,255,0.4); border-radius: 22rpx; padding: 0 6rpx;
+  box-sizing: border-box; z-index: 60;
 }
 .ptz-left { left: 50rpx; } .ptz-right { right: 50rpx; }
 .cam-round-btn {
@@ -135,25 +187,11 @@ page { width: 100vw; height: 100vh; overflow: hidden; background-color: #f0f2f5;
 .cam-info { flex: 1; display: flex; justify-content: center; align-items: center; height: 100%; }
 .cam-val { font-size: 15rpx; color: #000; font-family: calibri; font-weight: bold; }
 
+/* === Language Switcher === */
 .lang-switch {
-  position: absolute;
-  top: 40rpx;
-  right: 40rpx;
-  width: 60rpx;
-  height: 60rpx;
-  line-height: 60rpx;
-  text-align: center;
-  background: #fff;
-  border-radius: 50%;
-  box-shadow: 0 4rpx 10rpx rgba(0,0,0,0.1);
-  font-size: 24rpx;
-  font-weight: bold;
-  color: #2196F3;
-  z-index: 1000;
-  border: 1px solid #eee;
+  position: absolute; top: 40rpx; right: 40rpx; width: 60rpx; height: 60rpx;
+  line-height: 60rpx; text-align: center; background: #fff; border-radius: 50%;
+  box-shadow: 0 4rpx 10rpx rgba(0,0,0,0.1); font-size: 24rpx; font-weight: bold;
+  color: #2196F3; z-index: 1000; border: 1px solid #eee;
 }
-
-.lang-switch:active {
-  background: #f0f0f0;
-  transform: scale(0.95);
-}
+.lang-switch:active { background: #f0f0f0; transform: scale(0.95); }
