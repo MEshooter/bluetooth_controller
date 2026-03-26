@@ -12,7 +12,7 @@
 - 显示系统收发日志
 
 <p align="cneter">
-   <img width="1278" height="590" alt="65dc829cf0fb321357a5d26b1e8d6f8d" src="https://github.com/user-attachments/assets/23afcac5-2a9b-4c4c-bc2e-b935bedf1ce1" />
+   <img alt="65dc829cf0fb321357a5d26b1e8d6f8d" src="https://github.com/user-attachments/assets/23afcac5-2a9b-4c4c-bc2e-b935bedf1ce1" width="800"/>
 </p>
 
 ## 目录结构
@@ -64,7 +64,7 @@ bluetooth_controller/
 ### 1. 蓝牙搜索与连接
 
 <p align="center">
-   <img width="1311" height="603" alt="0bb6d367dd99b5ef374a9907fee3e352" src="https://github.com/user-attachments/assets/9199b2f6-df6e-4b20-ac58-bdd382e5c4c1" />
+   <img alt="0bb6d367dd99b5ef374a9907fee3e352" src="https://github.com/user-attachments/assets/9199b2f6-df6e-4b20-ac58-bdd382e5c4c1" width="800"/>
 </p>
 
 如上图所示，程序启动后会初始化蓝牙适配器，并支持扫描附近 BLE 设备。
@@ -169,7 +169,7 @@ bluetooth_controller/
 ## 页面结构
 
 <p align="center">
-   <img width="1311" height="603" alt="4826fe84163fb3b7368c603ffa2b0057" src="https://github.com/user-attachments/assets/7eea0691-a95d-4feb-a083-b8b55d21018a" />
+   <img alt="4826fe84163fb3b7368c603ffa2b0057" src="https://github.com/user-attachments/assets/7eea0691-a95d-4feb-a083-b8b55d21018a" width="800"/>
 </p>
 
 如上图所示，主页面 `pages/index/index.wxml` 包含以下区域：
