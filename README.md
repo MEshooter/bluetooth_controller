@@ -1,3 +1,6 @@
+[![中文](https://img.shields.io/badge/语言-中文-red)](./README.md)
+[![English](https://img.shields.io/badge/Language-English-blue)](./README.en.md)
+
 # 基于 Mbed 和树莓派的四驱视觉小车 - 客户端部分
 
 ## 项目简介

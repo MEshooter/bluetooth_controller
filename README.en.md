@@ -1,3 +1,6 @@
+[![中文](https://img.shields.io/badge/语言-中文-red)](./README.md)
+[![English](https://img.shields.io/badge/Language-English-blue)](./README.en.md)
+
 # 4WD Visual Car Based on Mbed and Raspberry Pi - Client Module
 
 ## Project Overview
@@ -228,4 +231,3 @@ It is recommended to open the project directory with WeChat DevTools for develop
 - If data cannot be sent or received, check whether the `FFE0/FFE1` service and characteristic match
 - If the video cannot be opened, check the Raspberry Pi IP address and WebSocket service status
 - If photo saving fails, check whether album permission has been granted
-
