@@ -170,6 +170,7 @@ bluetooth_controller/
 
 <p align="center">
    <img alt="4826fe84163fb3b7368c603ffa2b0057" src="https://github.com/user-attachments/assets/7eea0691-a95d-4feb-a083-b8b55d21018a" width="600"/>
+   <img alt="65e4ed9bd3591350c77be5dce587b094" src="https://github.com/user-attachments/assets/e87ab33d-26d7-478b-96e8-b8d22478e4e1" width="600"/>
 </p>
 
 如上图所示，主页面 `pages/index/index.wxml` 包含以下区域：
