@@ -11,7 +11,7 @@
 - 通过 WebSocket 接收树莓派视频流
 - 显示系统收发日志
 
-<p align="cneter">
+<p align="center">
    <img alt="65dc829cf0fb321357a5d26b1e8d6f8d" src="https://github.com/user-attachments/assets/23afcac5-2a9b-4c4c-bc2e-b935bedf1ce1" width="800"/>
 </p>
 
