@@ -11,6 +11,8 @@
 - 通过 WebSocket 接收树莓派视频流
 - 显示系统收发日志
 
+<img width="1311" height="603" alt="476b85b5cb916f044f804dd81391dd46" src="https://github.com/user-attachments/assets/739b4274-17d4-4f85-9f1c-ff006ef6ecf5" />
+
 ## 目录结构
 
 ```text
